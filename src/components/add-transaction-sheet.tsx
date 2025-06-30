@@ -53,8 +53,6 @@ function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOp
     },
   });
 
-  const { isSubmitting } = form.formState;
-
   async function onSubmit(values: z.infer<typeof fiadoSchema> | z.infer<typeof pagamentoSchema>) {
     try {
       await addTransaction({
@@ -137,8 +135,8 @@ function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOp
             <SheetClose asChild>
                 <Button variant="secondary" type="button" className="w-full">Cancelar</Button>
             </SheetClose>
-            <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground">
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-primary text-primary-foreground">
+              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
             </Button>
         </SheetFooter>
