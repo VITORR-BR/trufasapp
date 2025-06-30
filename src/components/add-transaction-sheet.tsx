@@ -86,19 +86,17 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
             <FormItem>
               <FormLabel>Nome do cliente</FormLabel>
               <FormControl>
-                <>
-                  <Input
-                    list="clientes-list"
-                    placeholder="Nome do cliente"
-                    {...field}
-                  />
-                  <datalist id="clientes-list">
-                    {clientes.map(cliente => (
-                      <option key={cliente.id} value={cliente.name} />
-                    ))}
-                  </datalist>
-                </>
+                <Input
+                  list="clientes-list"
+                  placeholder="Nome do cliente"
+                  {...field}
+                />
               </FormControl>
+              <datalist id="clientes-list">
+                {clientes.map(cliente => (
+                  <option key={cliente.id} value={cliente.name} />
+                ))}
+              </datalist>
               <FormMessage />
             </FormItem>
           )}
@@ -195,19 +193,17 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
               <FormItem>
                 <FormLabel>Nome do cliente (opcional)</FormLabel>
                 <FormControl>
-                  <>
-                    <Input
-                      list="clientes-list-pagamento"
-                      placeholder="Nome do cliente (opcional)"
-                      {...field}
-                    />
-                    <datalist id="clientes-list-pagamento">
-                      {clientes.map(cliente => (
-                        <option key={cliente.id} value={cliente.name} />
-                      ))}
-                    </datalist>
-                  </>
+                  <Input
+                    list="clientes-list-pagamento"
+                    placeholder="Nome do cliente (opcional)"
+                    {...field}
+                  />
                 </FormControl>
+                <datalist id="clientes-list-pagamento">
+                  {clientes.map(cliente => (
+                    <option key={cliente.id} value={cliente.name} />
+                  ))}
+                </datalist>
                 <FormMessage />
               </FormItem>
             )}
@@ -263,7 +259,7 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
         <SheetHeader>
           <SheetTitle>Adicionar Lançamento</SheetTitle>
         </SheetHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+        <Tabs value={activeTab} onValuechange={setActiveTab} className="w-full mt-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="fiado">Compra Fiada</TabsTrigger>
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
