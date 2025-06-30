@@ -89,7 +89,7 @@ export async function getHistorico(clienteId: string): Promise<{ history: Transa
       id: doc.id,
       type: data.tipo,
       amount: data.valor,
-      date: data.date.toDate(),
+      date: data.data.toDate(),
       person: cliente?.name,
       personId: cliente?.id,
     } as Transaction;

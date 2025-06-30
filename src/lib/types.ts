@@ -22,7 +22,7 @@ export interface Cliente {
 
 export interface HistoricoItem {
   id: string;
-  date: Timestamp;
+  data: Timestamp;
   tipo: 'fiado' | 'pagamento';
   valor: number;
 }
