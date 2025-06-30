@@ -161,7 +161,12 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
             <TabsTrigger value="fiado">Compra Fiada</TabsTrigger>
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
           </TabsList>
-            <TransactionForm type={activeTab as 'fiado' | 'pagamento'} setOpen={setOpen} />
+          <TabsContent value="fiado">
+            <TransactionForm type="fiado" setOpen={setOpen} />
+          </TabsContent>
+          <TabsContent value="pagamento">
+            <TransactionForm type="pagamento" setOpen={setOpen} />
+          </TabsContent>
         </Tabs>
       </SheetContent>
     </Sheet>
