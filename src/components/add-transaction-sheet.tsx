@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { addTransaction, getClientes } from '@/lib/db';
 import type { Cliente } from '@/lib/types';
@@ -35,8 +34,7 @@ const pagamentoSchema = z.object({
   date: z.string().nonempty('A data é obrigatória.'),
 });
 
-function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOpen: (open: boolean) => void }) {
-  const isCreditSale = type === 'fiado';
+function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
   const { toast } = useToast();
   const [clientes, setClientes] = useState<Cliente[]>([]);
 
@@ -44,8 +42,8 @@ function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOp
     getClientes().then(setClientes);
   }, []);
 
-  const form = useForm<z.infer<typeof (isCreditSale ? fiadoSchema : pagamentoSchema)>>({
-    resolver: zodResolver(isCreditSale ? fiadoSchema : pagamentoSchema),
+  const form = useForm<z.infer<typeof fiadoSchema>>({
+    resolver: zodResolver(fiadoSchema),
     defaultValues: {
       name: '',
       amount: undefined,
@@ -53,17 +51,17 @@ function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOp
     },
   });
 
-  async function onSubmit(values: z.infer<typeof fiadoSchema> | z.infer<typeof pagamentoSchema>) {
+  async function onSubmit(values: z.infer<typeof fiadoSchema>) {
     try {
       await addTransaction({
-        type,
-        name: values.name || '',
+        type: 'fiado',
+        name: values.name,
         amount: values.amount,
         date: new Date(values.date),
       });
       toast({
         title: 'Sucesso!',
-        description: 'Lançamento salvo.',
+        description: 'Compra fiada salva.',
       });
       form.reset();
       setOpen(false);
@@ -86,12 +84,12 @@ function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOp
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome</FormLabel>
+              <FormLabel>Nome do cliente</FormLabel>
               <FormControl>
                 <>
                   <Input
                     list="clientes-list"
-                    placeholder={isCreditSale ? 'Nome do cliente' : 'Nome do cliente (opcional)'}
+                    placeholder="Nome do cliente"
                     {...field}
                   />
                   <datalist id="clientes-list">
@@ -145,6 +143,115 @@ function TransactionForm({ type, setOpen }: { type: 'fiado' | 'pagamento'; setOp
   );
 }
 
+function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
+    const { toast } = useToast();
+    const [clientes, setClientes] = useState<Cliente[]>([]);
+
+    useEffect(() => {
+      getClientes().then(setClientes);
+    }, []);
+
+    const form = useForm<z.infer<typeof pagamentoSchema>>({
+      resolver: zodResolver(pagamentoSchema),
+      defaultValues: {
+        name: '',
+        amount: undefined,
+        date: new Date().toISOString().substring(0, 10),
+      },
+    });
+
+    async function onSubmit(values: z.infer<typeof pagamentoSchema>) {
+      try {
+        await addTransaction({
+          type: 'pagamento',
+          name: values.name || '',
+          amount: values.amount,
+          date: new Date(values.date),
+        });
+        toast({
+          title: 'Sucesso!',
+          description: 'Pagamento salvo.',
+        });
+        form.reset();
+        setOpen(false);
+        // NOTE: We should revalidate data on other pages, but for now this is fine.
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao salvar',
+          description: 'Ocorreu um problema ao salvar. Tente novamente.',
+        });
+      }
+    }
+
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do cliente (opcional)</FormLabel>
+                <FormControl>
+                  <>
+                    <Input
+                      list="clientes-list-pagamento"
+                      placeholder="Nome do cliente (opcional)"
+                      {...field}
+                    />
+                    <datalist id="clientes-list-pagamento">
+                      {clientes.map(cliente => (
+                        <option key={cliente.id} value={cliente.name} />
+                      ))}
+                    </datalist>
+                  </>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <SheetFooter className="pt-4">
+              <SheetClose asChild>
+                  <Button variant="secondary" type="button" className="w-full">Cancelar</Button>
+              </SheetClose>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-primary text-primary-foreground">
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar
+              </Button>
+          </SheetFooter>
+        </form>
+      </Form>
+    );
+  }
+
 export default function AddTransactionSheet({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('fiado');
@@ -162,10 +269,10 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
           </TabsList>
           <TabsContent value="fiado">
-            <TransactionForm type="fiado" setOpen={setOpen} />
+            <FiadoForm setOpen={setOpen} />
           </TabsContent>
           <TabsContent value="pagamento">
-            <TransactionForm type="pagamento" setOpen={setOpen} />
+            <PagamentoForm setOpen={setOpen} />
           </TabsContent>
         </Tabs>
       </SheetContent>
