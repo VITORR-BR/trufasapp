@@ -3,12 +3,44 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download } from 'lucide-react';
-import { reportData } from '@/lib/data';
+import { Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
+import { useEffect, useState, useMemo } from 'react';
+import { getAllTransactions } from '@/lib/db';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function RelatorioPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await getAllTransactions();
+      setTransactions(data);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  const filteredTransactions = useMemo(() => {
+    if (activeTab === 'all') return transactions;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (activeTab === 'today') {
+      return transactions.filter(t => t.date >= today);
+    }
+    
+    const daysToSubtract = activeTab === '7days' ? 7 : 30;
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - daysToSubtract + 1);
+    
+    return transactions.filter(t => t.date >= startDate);
+  }, [transactions, activeTab]);
+
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
   const renderRow = (item: Transaction) => (
@@ -28,39 +60,69 @@ export default function RelatorioPage() {
       <TableCell className="text-right font-medium">{formatCurrency(item.amount)}</TableCell>
     </TableRow>
   );
+  
+  const renderTable = (data: Transaction[]) => {
+    if (loading) {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cliente/Data</TableHead>
+              <TableHead className="text-right">Tipo</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )
+    }
+    if (data.length === 0) {
+      return <p className="text-center text-muted-foreground mt-8">Nenhuma transação encontrada para este período.</p>;
+    }
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Cliente/Data</TableHead>
+            <TableHead className="text-right">Tipo</TableHead>
+            <TableHead className="text-right">Valor</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map(renderRow)}
+        </TableBody>
+      </Table>
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Relatório</h1>
-        <Button variant="outline">
+        <Button variant="outline" disabled>
           <Download className="mr-2 h-4 w-4" />
           EXPORTAR
         </Button>
       </div>
       
-      <Tabs defaultValue="all">
+      <Tabs defaultValue="all" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">Tudo</TabsTrigger>
           <TabsTrigger value="today">Hoje</TabsTrigger>
           <TabsTrigger value="7days">7 dias</TabsTrigger>
           <TabsTrigger value="30days">30 dias</TabsTrigger>
         </TabsList>
-        <TabsContent value="all" className="mt-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente/Data</TableHead>
-                <TableHead className="text-right">Tipo</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reportData.map(renderRow)}
-            </TableBody>
-          </Table>
-        </TabsContent>
-        {/* Other tabs would have filtered data */}
+        <div className="mt-4">
+          {renderTable(filteredTransactions)}
+        </div>
       </Tabs>
     </div>
   );

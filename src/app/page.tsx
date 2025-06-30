@@ -3,19 +3,60 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, TrendingUp, DollarSign, Loader2 } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { summaryData, salesTrend } from '@/lib/data';
 import AddTransactionSheet from '@/components/add-transaction-sheet';
-
-const chartConfig = {
-  total: {
-    label: 'Total',
-    color: 'hsl(var(--primary))',
-  },
-};
+import { useEffect, useState } from 'react';
+import { getDebtors, getAllTransactions } from '@/lib/db';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+  const [soldToday, setSoldToday] = useState(0);
+  const [toReceive, setToReceive] = useState(0);
+  const [salesTrend, setSalesTrend] = useState<{date: string, total: number}[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      const [debtors, transactions] = await Promise.all([getDebtors(), getAllTransactions()]);
+      
+      const totalToReceive = debtors.reduce((sum, d) => sum + d.debt, 0);
+      setToReceive(totalToReceive);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const totalSoldToday = transactions
+        .filter(t => t.type === 'pagamento' && t.date >= today)
+        .reduce((sum, t) => sum + t.amount, 0);
+      setSoldToday(totalSoldToday);
+
+      const trendData: {[key: string]: number} = {};
+      const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayKey = days[d.getDay()];
+        trendData[dayKey] = 0;
+      }
+
+      transactions.forEach(t => {
+        const d = new Date(t.date);
+        const todayRef = new Date();
+        const diffDays = Math.floor((todayRef.getTime() - d.getTime()) / (1000 * 3600 * 24));
+        if (diffDays < 7 && t.type === 'pagamento') {
+          const dayKey = days[d.getDay()];
+          trendData[dayKey] = (trendData[dayKey] || 0) + t.amount;
+        }
+      });
+
+      setSalesTrend(Object.entries(trendData).map(([date, total]) => ({ date, total })));
+
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
   return (
@@ -35,7 +76,7 @@ export default function Home() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(summaryData.soldToday)}</div>
+              {loading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">{formatCurrency(soldToday)}</div>}
             </CardContent>
           </Card>
         </Link>
@@ -46,7 +87,7 @@ export default function Home() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{formatCurrency(summaryData.toReceive)}</div>
+               {loading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold text-destructive">{formatCurrency(toReceive)}</div>}
             </CardContent>
           </Card>
         </Link>
@@ -58,33 +99,39 @@ export default function Home() {
             <CardTitle>Evolução de Saldo (7d)</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={salesTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
-                <XAxis
-                  dataKey="date"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `R$${value}`}
-                />
-                <Tooltip
-                  cursor={{ fill: 'hsl(var(--accent))' }}
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    borderColor: 'hsl(var(--border))',
-                  }}
-                />
-                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? (
+                <div className="flex h-[250px] w-full items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={salesTrend}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
+                    <XAxis
+                    dataKey="date"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    />
+                    <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `R$${value}`}
+                    />
+                    <Tooltip
+                    cursor={{ fill: 'hsl(var(--accent))' }}
+                    contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        borderColor: 'hsl(var(--border))',
+                    }}
+                    />
+                    <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+                </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
