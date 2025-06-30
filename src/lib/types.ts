@@ -20,6 +20,10 @@ export interface Cliente {
   name: string;
 }
 
+export interface ClienteWithDebt extends Cliente {
+  debt: number;
+}
+
 export interface HistoricoItem {
   id: string;
   data: Timestamp;

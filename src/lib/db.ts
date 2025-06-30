@@ -14,8 +14,9 @@ import {
   collectionGroup,
   orderBy,
   documentId,
+  updateDoc,
 } from 'firebase/firestore';
-import type { Cliente, Debtor, HistoricoItem, Transaction } from './types';
+import type { Cliente, Debtor, HistoricoItem, Transaction, ClienteWithDebt } from './types';
 
 export async function addTransaction(data: {
   type: 'fiado' | 'pagamento';
@@ -67,11 +68,61 @@ export async function addTransaction(data: {
   await batch.commit();
 }
 
+export async function updateClienteName(clienteId: string, newName: string) {
+  const batch = writeBatch(db);
+
+  const clienteRef = doc(db, 'usuarios', clienteId);
+  batch.update(clienteRef, { nome: newName });
+
+  const pagamentosRef = collection(db, 'pagamentos');
+  const q = query(pagamentosRef, where('clienteId', '==', clienteId));
+  const querySnapshot = await getDocs(q);
+
+  querySnapshot.forEach((doc) => {
+    batch.update(doc.ref, { clienteNome: newName });
+  });
+
+  await batch.commit();
+}
+
+
 export async function getClientes(): Promise<Cliente[]> {
   const clientesRef = collection(db, 'usuarios');
   const q = query(clientesRef, orderBy('nome'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().nome as string }));
+}
+
+export async function getClientesWithDebts(): Promise<ClienteWithDebt[]> {
+  const userDebts = new Map<string, number>();
+
+  const historicoQuery = query(collectionGroup(db, 'historico'));
+  const historicoSnapshot = await getDocs(historicoQuery);
+  
+  historicoSnapshot.docs.forEach(doc => {
+      const transaction = doc.data();
+      const userId = doc.ref.parent.parent!.id;
+      const currentDebt = userDebts.get(userId) || 0;
+      if (transaction.tipo === 'fiado') {
+          userDebts.set(userId, currentDebt + transaction.valor);
+      } else {
+          userDebts.set(userId, currentDebt - transaction.valor);
+      }
+  });
+
+  const clientesRef = collection(db, 'usuarios');
+  const clientesSnapshot = await getDocs(query(clientesRef, orderBy('nome')));
+
+  const clientesWithDebts = clientesSnapshot.docs.map(doc => {
+      const id = doc.id;
+      return {
+          id: id,
+          name: doc.data().nome,
+          debt: userDebts.get(id) || 0,
+      };
+  });
+
+  return clientesWithDebts;
 }
 
 export async function getHistorico(clienteId: string): Promise<{ history: Transaction[], cliente: Cliente | null }> {

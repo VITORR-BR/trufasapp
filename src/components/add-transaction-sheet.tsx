@@ -18,8 +18,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { addTransaction, getClientes } from '@/lib/db';
-import type { Cliente } from '@/lib/types';
+import { addTransaction, getClientesWithDebts, getClientes } from '@/lib/db';
+import type { Cliente, ClienteWithDebt } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Loader2 } from 'lucide-react';
 
@@ -35,22 +35,47 @@ const pagamentoSchema = z.object({
   date: z.string().nonempty('A data é obrigatória.'),
 });
 
+const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+
 function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
   const { toast } = useToast();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientes, setClientes] = useState<ClienteWithDebt[]>([]);
+  const [filteredClientes, setFilteredClientes] = useState<ClienteWithDebt[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    getClientes().then(setClientes);
+    getClientesWithDebts().then(setClientes);
   }, []);
 
   const form = useForm<z.infer<typeof fiadoSchema>>({
     resolver: zodResolver(fiadoSchema),
     defaultValues: {
       name: '',
-      amount: undefined,
+      amount: '' as any,
       date: new Date().toISOString().substring(0, 10),
     },
   });
+
+  const watchName = form.watch('name');
+
+  useEffect(() => {
+    if (watchName) {
+      const filtered = clientes.filter(c =>
+        c.name.toLowerCase().includes(watchName.toLowerCase())
+      );
+      setFilteredClientes(filtered);
+      setShowSuggestions(true);
+    } else {
+      setFilteredClientes([]);
+      setShowSuggestions(false);
+    }
+  }, [watchName, clientes]);
+
+
+  const handleSelectCliente = (cliente: Cliente) => {
+    form.setValue('name', cliente.name);
+    setShowSuggestions(false);
+  };
 
   async function onSubmit(values: z.infer<typeof fiadoSchema>) {
     try {
@@ -66,7 +91,6 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
       });
       form.reset();
       setOpen(false);
-      // NOTE: We should revalidate data on other pages, but for now this is fine.
     } catch (error) {
       console.error(error);
       toast({
@@ -76,6 +100,8 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
       });
     }
   }
+
+  const isNewCliente = watchName && !clientes.some(c => c.name.toLowerCase() === watchName.toLowerCase());
 
   return (
     <Form {...form}>
@@ -87,17 +113,46 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
             <FormItem>
               <FormLabel>Nome do cliente</FormLabel>
               <FormControl>
-                <Input
-                  list="clientes-list"
-                  placeholder="Nome do cliente"
-                  {...field}
-                />
+                <div className="relative">
+                   <Input
+                    placeholder="Nome do cliente"
+                    {...field}
+                    autoComplete="off"
+                    onFocus={() => watchName && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  />
+                  {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
+                    <ul className="absolute z-20 w-full bg-card border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                       {filteredClientes.map(cliente => (
+                        <li
+                          key={cliente.id}
+                          className="p-2 hover:bg-accent cursor-pointer text-sm"
+                          onMouseDown={() => handleSelectCliente(cliente)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span>{cliente.name}</span>
+                            {cliente.debt > 0 && (
+                              <span className="text-destructive font-medium">
+                                {formatCurrency(cliente.debt)}
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                      {isNewCliente && (
+                        <li className="p-2 hover:bg-accent cursor-pointer text-sm"
+                            onMouseDown={() => {
+                                form.setValue('name', field.value);
+                                setShowSuggestions(false);
+                            }}
+                        >
+                            Criar novo cliente: "{field.value}"
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </div>
               </FormControl>
-              <datalist id="clientes-list">
-                {clientes.map(cliente => (
-                  <option key={cliente.id} value={cliente.name} />
-                ))}
-              </datalist>
               <FormMessage />
             </FormItem>
           )}
@@ -109,7 +164,7 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
             <FormItem>
               <FormLabel>Valor</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="R$ 0,00" {...field} value={field.value ?? ''} step="0.01" />
+                <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -145,6 +200,8 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
 function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
     const { toast } = useToast();
     const [clientes, setClientes] = useState<Cliente[]>([]);
+    const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     useEffect(() => {
       getClientes().then(setClientes);
@@ -154,10 +211,30 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
       resolver: zodResolver(pagamentoSchema),
       defaultValues: {
         name: '',
-        amount: undefined,
+        amount: '' as any,
         date: new Date().toISOString().substring(0, 10),
       },
     });
+
+    const watchName = form.watch('name');
+
+    useEffect(() => {
+        if (watchName) {
+          const filtered = clientes.filter(c =>
+            c.name.toLowerCase().includes(watchName.toLowerCase())
+          );
+          setFilteredClientes(filtered);
+          setShowSuggestions(true);
+        } else {
+          setFilteredClientes([]);
+          setShowSuggestions(false);
+        }
+      }, [watchName, clientes]);
+    
+    const handleSelectCliente = (cliente: Cliente) => {
+        form.setValue('name', cliente.name);
+        setShowSuggestions(false);
+    };
 
     async function onSubmit(values: z.infer<typeof pagamentoSchema>) {
       try {
@@ -173,7 +250,6 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
         });
         form.reset();
         setOpen(false);
-        // NOTE: We should revalidate data on other pages, but for now this is fine.
       } catch (error) {
         console.error(error);
         toast({
@@ -183,6 +259,8 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
         });
       }
     }
+
+    const isNewCliente = watchName && !clientes.some(c => c.name.toLowerCase() === watchName.toLowerCase());
 
     return (
       <Form {...form}>
@@ -194,17 +272,39 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
               <FormItem>
                 <FormLabel>Nome do cliente (opcional)</FormLabel>
                 <FormControl>
-                  <Input
-                    list="clientes-list-pagamento"
-                    placeholder="Nome do cliente (opcional)"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                        placeholder="Nome do cliente"
+                        {...field}
+                        autoComplete="off"
+                        onFocus={() => watchName && setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    />
+                    {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
+                        <ul className="absolute z-20 w-full bg-card border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                        {filteredClientes.map(cliente => (
+                            <li
+                                key={cliente.id}
+                                className="p-2 hover:bg-accent cursor-pointer text-sm"
+                                onMouseDown={() => handleSelectCliente(cliente)}
+                            >
+                                {cliente.name}
+                            </li>
+                        ))}
+                        {isNewCliente && (
+                          <li className="p-2 hover:bg-accent cursor-pointer text-sm"
+                              onMouseDown={() => {
+                                  form.setValue('name', field.value);
+                                  setShowSuggestions(false);
+                              }}
+                          >
+                              Criar novo cliente: "{field.value}"
+                          </li>
+                        )}
+                        </ul>
+                    )}
+                  </div>
                 </FormControl>
-                <datalist id="clientes-list-pagamento">
-                  {clientes.map(cliente => (
-                    <option key={cliente.id} value={cliente.name} />
-                  ))}
-                </datalist>
                 <FormMessage />
               </FormItem>
             )}
@@ -216,7 +316,7 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
               <FormItem>
                 <FormLabel>Valor</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="R$ 0,00" {...field} value={field.value ?? ''} step="0.01" />
+                  <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
