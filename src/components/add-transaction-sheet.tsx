@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -259,7 +260,7 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
         <SheetHeader>
           <SheetTitle>Adicionar Lançamento</SheetTitle>
         </SheetHeader>
-        <Tabs value={activeTab} onValuechange={setActiveTab} className="w-full mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="fiado">Compra Fiada</TabsTrigger>
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
