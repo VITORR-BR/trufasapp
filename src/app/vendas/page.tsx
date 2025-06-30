@@ -35,7 +35,7 @@ export default function VendasPage() {
     return acc;
   }, 0);
 
-  const recentSales = transactions.slice(0, 10);
+  const recentSales = transactions.filter(t => t.type === 'pagamento').slice(0, 5);
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -61,6 +61,10 @@ export default function VendasPage() {
       {loading ? (
         <div className="flex flex-col gap-3">
           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+        </div>
+      ) : recentSales.length === 0 ? (
+        <div className="text-center text-muted-foreground mt-4">
+          <p>Nenhum pagamento recebido recentemente.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">

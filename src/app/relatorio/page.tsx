@@ -14,6 +14,7 @@ export default function RelatorioPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,27 +27,35 @@ export default function RelatorioPage() {
   }, []);
 
   const filteredTransactions = useMemo(() => {
-    if (activeTab === 'all') return transactions;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dateFiltered = (() => {
+      if (activeTab === 'all') return transactions;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    if (activeTab === 'today') {
+      if (activeTab === 'today') {
+        return transactions.filter(t => {
+          const transactionDate = new Date(t.date);
+          transactionDate.setHours(0,0,0,0);
+          return transactionDate.getTime() === today.getTime();
+        });
+      }
+      
+      const daysToSubtract = activeTab === '7days' ? 7 : 30;
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - daysToSubtract + 1);
+      
       return transactions.filter(t => {
         const transactionDate = new Date(t.date);
-        transactionDate.setHours(0,0,0,0);
-        return transactionDate.getTime() === today.getTime();
+        return transactionDate >= startDate;
       });
+    })();
+    
+    if (typeFilter === 'all') {
+      return dateFiltered;
     }
-    
-    const daysToSubtract = activeTab === '7days' ? 7 : 30;
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - daysToSubtract + 1);
-    
-    return transactions.filter(t => {
-      const transactionDate = new Date(t.date);
-      return transactionDate >= startDate;
-    });
-  }, [transactions, activeTab]);
+    return dateFiltered.filter(t => t.type === typeFilter);
+
+  }, [transactions, activeTab, typeFilter]);
 
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
@@ -146,17 +155,27 @@ export default function RelatorioPage() {
         </Button>
       </div>
       
-      <Tabs defaultValue="all" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">Tudo</TabsTrigger>
-          <TabsTrigger value="today">Hoje</TabsTrigger>
-          <TabsTrigger value="7days">7 dias</TabsTrigger>
-          <TabsTrigger value="30days">30 dias</TabsTrigger>
-        </TabsList>
-        <div className="mt-4">
-          {renderTable(filteredTransactions)}
-        </div>
-      </Tabs>
+      <div className="space-y-2">
+        <Tabs defaultValue="all" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">Tudo</TabsTrigger>
+            <TabsTrigger value="today">Hoje</TabsTrigger>
+            <TabsTrigger value="7days">7 dias</TabsTrigger>
+            <TabsTrigger value="30days">30 dias</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Tabs defaultValue="all" onValueChange={setTypeFilter}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="pagamento">Pagamentos</TabsTrigger>
+            <TabsTrigger value="fiado">Fiado</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {renderTable(filteredTransactions)}
+      </div>
     </div>
   );
 }

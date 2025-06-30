@@ -76,7 +76,7 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
         type: 'fiado',
         name: values.name,
         amount: values.amount,
-        date: new Date(values.date),
+        date: new Date(values.date + 'T00:00:00'),
       });
       toast({
         title: 'Sucesso!',
@@ -224,7 +224,7 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
           type: 'pagamento',
           name: values.name || '',
           amount: values.amount,
-          date: new Date(values.date),
+          date: new Date(values.date + 'T00:00:00'),
         });
         toast({
           title: 'Sucesso!',
