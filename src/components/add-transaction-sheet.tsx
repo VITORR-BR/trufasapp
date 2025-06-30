@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,8 +19,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { addTransaction, getClientesWithDebts, getClientes } from '@/lib/db';
-import type { Cliente, ClienteWithDebt } from '@/lib/types';
+import { addTransaction, getClientesWithDebts } from '@/lib/db';
+import type { ClienteWithDebt } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Loader2 } from 'lucide-react';
 
@@ -35,9 +36,13 @@ const pagamentoSchema = z.object({
   date: z.string().nonempty('A data é obrigatória.'),
 });
 
+type FiadoSchema = z.infer<typeof fiadoSchema>;
+type PagamentoSchema = z.infer<typeof pagamentoSchema>;
+
+
 const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
-function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
+function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: UseFormReturn<FiadoSchema> }) {
   const { toast } = useToast();
   const [clientes, setClientes] = useState<ClienteWithDebt[]>([]);
   const [filteredClientes, setFilteredClientes] = useState<ClienteWithDebt[]>([]);
@@ -47,37 +52,25 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
     getClientesWithDebts().then(setClientes);
   }, []);
 
-  const form = useForm<z.infer<typeof fiadoSchema>>({
-    resolver: zodResolver(fiadoSchema),
-    defaultValues: {
-      name: '',
-      amount: '' as any,
-      date: new Date().toISOString().substring(0, 10),
-    },
-  });
-
   const watchName = form.watch('name');
 
   useEffect(() => {
-    if (watchName) {
+    if (watchName && showSuggestions) {
       const filtered = clientes.filter(c =>
         c.name.toLowerCase().includes(watchName.toLowerCase())
       );
       setFilteredClientes(filtered);
-      setShowSuggestions(true);
     } else {
       setFilteredClientes([]);
-      setShowSuggestions(false);
     }
-  }, [watchName, clientes]);
+  }, [watchName, clientes, showSuggestions]);
 
-
-  const handleSelectCliente = (cliente: Cliente) => {
+  const handleSelectCliente = (cliente: ClienteWithDebt) => {
     form.setValue('name', cliente.name);
     setShowSuggestions(false);
   };
 
-  async function onSubmit(values: z.infer<typeof fiadoSchema>) {
+  async function onSubmit(values: FiadoSchema) {
     try {
       await addTransaction({
         type: 'fiado',
@@ -118,7 +111,7 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
                     placeholder="Nome do cliente"
                     {...field}
                     autoComplete="off"
-                    onFocus={() => watchName && setShowSuggestions(true)}
+                    onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   />
                   {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
@@ -197,46 +190,35 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
   );
 }
 
-function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
+function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: UseFormReturn<PagamentoSchema> }) {
     const { toast } = useToast();
-    const [clientes, setClientes] = useState<Cliente[]>([]);
-    const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+    const [clientes, setClientes] = useState<ClienteWithDebt[]>([]);
+    const [filteredClientes, setFilteredClientes] = useState<ClienteWithDebt[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
     useEffect(() => {
-      getClientes().then(setClientes);
+      getClientesWithDebts().then(setClientes);
     }, []);
-
-    const form = useForm<z.infer<typeof pagamentoSchema>>({
-      resolver: zodResolver(pagamentoSchema),
-      defaultValues: {
-        name: '',
-        amount: '' as any,
-        date: new Date().toISOString().substring(0, 10),
-      },
-    });
 
     const watchName = form.watch('name');
 
     useEffect(() => {
-        if (watchName) {
+        if (watchName && showSuggestions) {
           const filtered = clientes.filter(c =>
             c.name.toLowerCase().includes(watchName.toLowerCase())
           );
           setFilteredClientes(filtered);
-          setShowSuggestions(true);
         } else {
           setFilteredClientes([]);
-          setShowSuggestions(false);
         }
-      }, [watchName, clientes]);
+      }, [watchName, clientes, showSuggestions]);
     
-    const handleSelectCliente = (cliente: Cliente) => {
+    const handleSelectCliente = (cliente: ClienteWithDebt) => {
         form.setValue('name', cliente.name);
         setShowSuggestions(false);
     };
 
-    async function onSubmit(values: z.infer<typeof pagamentoSchema>) {
+    async function onSubmit(values: PagamentoSchema) {
       try {
         await addTransaction({
           type: 'pagamento',
@@ -277,7 +259,7 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
                         placeholder="Nome do cliente"
                         {...field}
                         autoComplete="off"
-                        onFocus={() => watchName && setShowSuggestions(true)}
+                        onFocus={() => setShowSuggestions(true)}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                     />
                     {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
@@ -288,7 +270,14 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
                                 className="p-2 hover:bg-accent cursor-pointer text-sm"
                                 onMouseDown={() => handleSelectCliente(cliente)}
                             >
-                                {cliente.name}
+                              <div className="flex justify-between items-center">
+                                <span>{cliente.name}</span>
+                                {cliente.debt > 0 && (
+                                  <span className="text-destructive font-medium">
+                                    {formatCurrency(cliente.debt)}
+                                  </span>
+                                )}
+                              </div>
                             </li>
                         ))}
                         {isNewCliente && (
@@ -352,6 +341,45 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
 export default function AddTransactionSheet({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('fiado');
+  
+  const defaultValues = {
+    name: '',
+    amount: '' as any,
+    date: new Date().toISOString().substring(0, 10),
+  };
+
+  const fiadoForm = useForm<FiadoSchema>({
+    resolver: zodResolver(fiadoSchema),
+    defaultValues,
+  });
+
+  const pagamentoForm = useForm<PagamentoSchema>({
+    resolver: zodResolver(pagamentoSchema),
+    defaultValues,
+  });
+
+  const handleTabChange = (newTab: string) => {
+    if (newTab === 'pagamento') {
+      const { name, amount, date } = fiadoForm.getValues();
+      pagamentoForm.setValue('name', name || '');
+      pagamentoForm.setValue('amount', amount);
+      pagamentoForm.setValue('date', date);
+    } else if (newTab === 'fiado') {
+      const { name, amount, date } = pagamentoForm.getValues();
+      fiadoForm.setValue('name', name || '');
+      fiadoForm.setValue('amount', amount);
+      fiadoForm.setValue('date', date);
+    }
+    setActiveTab(newTab);
+  };
+
+  useEffect(() => {
+    if (!open) {
+      fiadoForm.reset(defaultValues);
+      pagamentoForm.reset(defaultValues);
+      setActiveTab('fiado');
+    }
+  }, [open, fiadoForm, pagamentoForm]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -360,16 +388,16 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
         <SheetHeader>
           <SheetTitle>Adicionar Lançamento</SheetTitle>
         </SheetHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="fiado">Compra Fiada</TabsTrigger>
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
           </TabsList>
           <TabsContent value="fiado">
-            <FiadoForm setOpen={setOpen} />
+            <FiadoForm setOpen={setOpen} form={fiadoForm} />
           </TabsContent>
           <TabsContent value="pagamento">
-            <PagamentoForm setOpen={setOpen} />
+            <PagamentoForm setOpen={setOpen} form={pagamentoForm} />
           </TabsContent>
         </Tabs>
       </SheetContent>

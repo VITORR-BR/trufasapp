@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -31,22 +31,55 @@ export default function RelatorioPage() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     if (activeTab === 'today') {
-      return transactions.filter(t => t.date >= today);
+      return transactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        transactionDate.setHours(0,0,0,0);
+        return transactionDate.getTime() === today.getTime();
+      });
     }
     
     const daysToSubtract = activeTab === '7days' ? 7 : 30;
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - daysToSubtract + 1);
     
-    return transactions.filter(t => t.date >= startDate);
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate >= startDate;
+    });
   }, [transactions, activeTab]);
 
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
+  const handleExport = () => {
+    if (filteredTransactions.length === 0) return;
+
+    const headers = 'Data,Nome,Tipo,Valor\n';
+    
+    const rows = filteredTransactions.map(t => {
+      const date = t.date.toLocaleDateString('pt-BR');
+      const name = `"${t.person || 'Pagamento Avulso'}"`;
+      const type = t.type === 'fiado' ? 'Fiado' : 'Pagamento';
+      const value = `${t.amount.toFixed(2).replace('.', ',')}`;
+      return [date, name, type, value].join(',');
+    }).join('\n');
+    
+    const csvContent = headers + rows;
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `relatorio-truffle-track-${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const renderRow = (item: Transaction) => (
     <TableRow key={item.id}>
       <TableCell>
-        <div className="font-medium">{item.person || 'N/A'}</div>
+        <div className="font-medium">{item.person || 'Pagamento Avulso'}</div>
         <div className="text-sm text-muted-foreground">{item.date.toLocaleDateString('pt-BR')}</div>
       </TableCell>
       <TableCell className="text-right">
@@ -107,7 +140,7 @@ export default function RelatorioPage() {
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Relatório</h1>
-        <Button variant="outline" disabled>
+        <Button variant="outline" onClick={handleExport} disabled={loading || filteredTransactions.length === 0}>
           <Download className="mr-2 h-4 w-4" />
           EXPORTAR
         </Button>
