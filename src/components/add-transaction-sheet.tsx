@@ -109,7 +109,7 @@ function FiadoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
             <FormItem>
               <FormLabel>Valor</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
+                <Input type="number" placeholder="R$ 0,00" {...field} value={field.value ?? ''} step="0.01" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -216,7 +216,7 @@ function PagamentoForm({ setOpen }: { setOpen: (open: boolean) => void }) {
               <FormItem>
                 <FormLabel>Valor</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
+                  <Input type="number" placeholder="R$ 0,00" {...field} value={field.value ?? ''} step="0.01" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
