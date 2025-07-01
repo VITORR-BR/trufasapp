@@ -76,7 +76,7 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
         type: 'fiado',
         name: values.name,
         amount: values.amount,
-        date: new Date(values.date + 'T00:00:00'),
+        date: new Date(values.date + 'T12:00:00'),
       });
       toast({
         title: 'Sucesso!',
@@ -112,7 +112,15 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
                     placeholder="Nome do cliente"
                     {...field}
                     autoComplete="off"
-                    onFocus={() => setShowSuggestions(true)}
+                    onFocus={(e) => {
+                        setShowSuggestions(true);
+                        setTimeout(() => {
+                            e.currentTarget.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                            });
+                        }, 100);
+                    }}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   />
                   {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
@@ -225,7 +233,7 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
           type: 'pagamento',
           name: values.name || '',
           amount: values.amount,
-          date: new Date(values.date + 'T00:00:00'),
+          date: new Date(values.date + 'T12:00:00'),
         });
         toast({
           title: 'Sucesso!',
@@ -261,7 +269,15 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
                         placeholder="Nome do cliente"
                         {...field}
                         autoComplete="off"
-                        onFocus={() => setShowSuggestions(true)}
+                        onFocus={(e) => {
+                            setShowSuggestions(true);
+                            setTimeout(() => {
+                                e.currentTarget.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                });
+                            }, 100);
+                        }}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                     />
                     {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
