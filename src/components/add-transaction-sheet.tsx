@@ -187,9 +187,6 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
           )}
         />
         <SheetFooter className="pt-4">
-            <SheetClose asChild>
-                <Button variant="secondary" type="button" className="w-full">Cancelar</Button>
-            </SheetClose>
             <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-primary text-primary-foreground">
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
@@ -345,9 +342,6 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
             )}
           />
           <SheetFooter className="pt-4">
-              <SheetClose asChild>
-                  <Button variant="secondary" type="button" className="w-full">Cancelar</Button>
-              </SheetClose>
               <Button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-primary text-primary-foreground">
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Salvar
