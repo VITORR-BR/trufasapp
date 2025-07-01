@@ -112,15 +112,9 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
                     placeholder="Nome do cliente"
                     {...field}
                     autoComplete="off"
-                    onFocus={(e) => {
+                    onFocus={() => {
                         setShowSuggestions(true);
-                        const target = e.currentTarget;
-                        setTimeout(() => {
-                            target.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                            });
-                        }, 100);
+                        window.scrollTo(0, document.body.scrollHeight);
                     }}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   />
@@ -267,15 +261,9 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
                         placeholder="Nome do cliente"
                         {...field}
                         autoComplete="off"
-                        onFocus={(e) => {
+                        onFocus={() => {
                             setShowSuggestions(true);
-                            const target = e.currentTarget;
-                            setTimeout(() => {
-                                target.scrollIntoView({
-                                    behavior: 'smooth',
-                                    block: 'center',
-                                });
-                            }, 100);
+                            window.scrollTo(0, document.body.scrollHeight);
                         }}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                     />
@@ -352,9 +340,9 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
     );
   }
 
-export default function AddTransactionSheet({ children }: { children: React.ReactNode }) {
+export default function AddTransactionSheet({ children, defaultTab = 'fiado' }: { children: React.ReactNode, defaultTab?: 'fiado' | 'pagamento' }) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('fiado');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   
   const defaultValues = {
     name: '',
@@ -371,6 +359,15 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
     resolver: zodResolver(pagamentoSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab(defaultTab);
+    } else {
+      fiadoForm.reset(defaultValues);
+      pagamentoForm.reset(defaultValues);
+    }
+  }, [open, defaultTab, fiadoForm, pagamentoForm]);
 
   useEffect(() => {
     if (open) {
@@ -396,14 +393,6 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
     }
     setActiveTab(newTab);
   };
-
-  useEffect(() => {
-    if (!open) {
-      fiadoForm.reset(defaultValues);
-      pagamentoForm.reset(defaultValues);
-      setActiveTab('fiado');
-    }
-  }, [open, fiadoForm, pagamentoForm]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
