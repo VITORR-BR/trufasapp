@@ -114,8 +114,9 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
                     autoComplete="off"
                     onFocus={(e) => {
                         setShowSuggestions(true);
+                        const target = e.currentTarget;
                         setTimeout(() => {
-                            e.currentTarget.scrollIntoView({
+                            target.scrollIntoView({
                                 behavior: 'smooth',
                                 block: 'center',
                             });
@@ -271,8 +272,9 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
                         autoComplete="off"
                         onFocus={(e) => {
                             setShowSuggestions(true);
+                            const target = e.currentTarget;
                             setTimeout(() => {
-                                e.currentTarget.scrollIntoView({
+                                target.scrollIntoView({
                                     behavior: 'smooth',
                                     block: 'center',
                                 });
