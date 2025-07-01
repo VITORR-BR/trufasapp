@@ -5,9 +5,12 @@ import { Toaster } from '@/components/ui/toaster';
 import { BottomNav } from '@/components/bottom-nav';
 
 export const metadata: Metadata = {
-  title: 'Truffle Track',
-  description: 'Gerenciador de vendas de trufas',
+  title: 'Fiado',
+  description: 'Gerenciador de fiados',
   manifest: '/manifest.json',
+  icons: {
+    icon: 'https://i.imgur.com/Q3ZZ6SV.png',
+  },
 };
 
 export const viewport: Viewport = {
