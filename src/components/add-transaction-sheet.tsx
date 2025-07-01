@@ -114,7 +114,7 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
                     autoComplete="off"
                     onFocus={(e) => {
                         setShowSuggestions(true);
-                        const target = e.currentTarget;Add commentMore actions
+                        const target = e.currentTarget;
                         setTimeout(() => {
                             target.scrollIntoView({
                                 behavior: 'smooth',
@@ -269,13 +269,14 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
                         autoComplete="off"
                         onFocus={(e) => {
                             setShowSuggestions(true);
-                            const target = e.currentTarget;Add commentMore actions
+                            const target = e.currentTarget;
                             setTimeout(() => {
                                 target.scrollIntoView({
                                     behavior: 'smooth',
                                     block: 'center',
                                 });
                             }, 100);
+                        }}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                     />
                     {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
@@ -353,7 +354,7 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
 
 export default function AddTransactionSheet({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(fiado);
+  const [activeTab, setActiveTab] = useState('fiado');
   
   const defaultValues = {
     name: '',
@@ -396,15 +397,14 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
     setActiveTab(newTab);
   };
 
-  useEffect(() => {Add commentMore actions
+  useEffect(() => {
     if (!open) {
       fiadoForm.reset(defaultValues);
       pagamentoForm.reset(defaultValues);
       setActiveTab('fiado');
     }
   }, [open, fiadoForm, pagamentoForm]);
-Add comment
-    
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
