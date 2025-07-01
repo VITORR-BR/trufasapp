@@ -112,9 +112,15 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
                     placeholder="Nome do cliente"
                     {...field}
                     autoComplete="off"
-                    onFocus={() => {
+                    onFocus={(e) => {
                         setShowSuggestions(true);
-                        window.scrollTo(0, document.body.scrollHeight);
+                        const target = e.currentTarget;Add commentMore actions
+                        setTimeout(() => {
+                            target.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                            });
+                        }, 100);
                     }}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   />
@@ -261,10 +267,15 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
                         placeholder="Nome do cliente"
                         {...field}
                         autoComplete="off"
-                        onFocus={() => {
+                        onFocus={(e) => {
                             setShowSuggestions(true);
-                            window.scrollTo(0, document.body.scrollHeight);
-                        }}
+                            const target = e.currentTarget;Add commentMore actions
+                            setTimeout(() => {
+                                target.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                });
+                            }, 100);
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                     />
                     {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
@@ -340,9 +351,9 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
     );
   }
 
-export default function AddTransactionSheet({ children, defaultTab = 'fiado' }: { children: React.ReactNode, defaultTab?: 'fiado' | 'pagamento' }) {
+export default function AddTransactionSheet({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState(fiado);
   
   const defaultValues = {
     name: '',
@@ -359,15 +370,6 @@ export default function AddTransactionSheet({ children, defaultTab = 'fiado' }: 
     resolver: zodResolver(pagamentoSchema),
     defaultValues,
   });
-
-  useEffect(() => {
-    if (open) {
-      setActiveTab(defaultTab);
-    } else {
-      fiadoForm.reset(defaultValues);
-      pagamentoForm.reset(defaultValues);
-    }
-  }, [open, defaultTab, fiadoForm, pagamentoForm]);
 
   useEffect(() => {
     if (open) {
@@ -394,6 +396,15 @@ export default function AddTransactionSheet({ children, defaultTab = 'fiado' }: 
     setActiveTab(newTab);
   };
 
+  useEffect(() => {Add commentMore actions
+    if (!open) {
+      fiadoForm.reset(defaultValues);
+      pagamentoForm.reset(defaultValues);
+      setActiveTab('fiado');
+    }
+  }, [open, fiadoForm, pagamentoForm]);
+Add comment
+    
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
