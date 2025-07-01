@@ -2,13 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BadgePercent } from 'lucide-react';
+import { ArrowRight, BadgePercent, Plus } from 'lucide-react';
 import Link from 'next/link';
 import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { getAllTransactions } from '@/lib/db';
 import { Skeleton } from '@/components/ui/skeleton';
+import AddTransactionSheet from '@/components/add-transaction-sheet';
 
 export default function VendasPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -89,6 +90,13 @@ export default function VendasPage() {
           ))}
         </div>
       )}
+
+      <AddTransactionSheet>
+        <Button className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40">
+          <Plus className="h-6 w-6" />
+          <span className="sr-only">Adicionar Lançamento</span>
+        </Button>
+      </AddTransactionSheet>
     </div>
   );
 }

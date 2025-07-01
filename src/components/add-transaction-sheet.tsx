@@ -108,6 +108,7 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
               <FormControl>
                 <div className="relative">
                    <Input
+                    id="fiado-name-input"
                     placeholder="Nome do cliente"
                     {...field}
                     autoComplete="off"
@@ -157,7 +158,7 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
             <FormItem>
               <FormLabel>Valor</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
+                <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" autoComplete="off" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -256,6 +257,7 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
                 <FormControl>
                   <div className="relative">
                     <Input
+                        id="pagamento-name-input"
                         placeholder="Nome do cliente"
                         {...field}
                         autoComplete="off"
@@ -305,7 +307,7 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
               <FormItem>
                 <FormLabel>Valor</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" />
+                  <Input type="number" placeholder="R$ 0,00" {...field} step="0.01" autoComplete="off" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -357,6 +359,16 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
     resolver: zodResolver(pagamentoSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        const inputId = activeTab === 'fiado' ? 'fiado-name-input' : 'pagamento-name-input';
+        const inputElement = document.getElementById(inputId);
+        inputElement?.focus();
+      }, 150);
+    }
+  }, [open, activeTab]);
 
   const handleTabChange = (newTab: string) => {
     if (newTab === 'pagamento') {
