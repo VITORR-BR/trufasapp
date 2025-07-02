@@ -28,7 +28,7 @@ export default function PendentesPage() {
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Pendentes</h1>
         <p className="text-sm text-muted-foreground">{loading ? '...' : `${debtors.length} devedores`}</p>
