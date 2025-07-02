@@ -30,7 +30,7 @@ export async function addTransaction(data: {
 
   let clienteId: string | null = null;
   let clienteName: string | null = null;
-  
+
   if (name) {
     clienteName = name;
     const clientesRef = collection(db, 'usuarios');
@@ -38,6 +38,7 @@ export async function addTransaction(data: {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
+      // Create new client if it doesn't exist
       const newClienteRef = doc(clientesRef);
       batch.set(newClienteRef, { nome: name });
       clienteId = newClienteRef.id;
@@ -46,6 +47,7 @@ export async function addTransaction(data: {
     }
   }
 
+  // Always log payment in the main 'pagamentos' collection for reporting
   if (type === 'pagamento') {
     const pagamentosRef = collection(db, 'pagamentos');
     batch.set(doc(pagamentosRef), {
@@ -55,14 +57,48 @@ export async function addTransaction(data: {
       ...(clienteName && { clienteNome: clienteName }),
     });
   }
-  
+
   if (clienteId) {
     const historicoRef = collection(db, `usuarios/${clienteId}/historico`);
-    batch.set(doc(historicoRef), {
-      tipo: type,
-      valor: amount,
-      data: firestoreDate,
-    });
+    
+    if (type === 'fiado') {
+      // For 'fiado', always add to history
+      batch.set(doc(historicoRef), {
+        tipo: 'fiado',
+        valor: amount,
+        data: firestoreDate,
+      });
+    } else { // type is 'pagamento'
+      // For payments, check if it clears the debt
+      const clientHistoricoSnapshot = await getDocs(query(historicoRef));
+      
+      let debtBeforePayment = 0;
+      clientHistoricoSnapshot.forEach(doc => {
+        const t = doc.data();
+        if (t.tipo === 'fiado') {
+          debtBeforePayment += t.valor;
+        } else {
+          debtBeforePayment -= t.valor;
+        }
+      });
+
+      const debtAfterPayment = debtBeforePayment - amount;
+
+      // Check if debt is zero or overpaid, using a small epsilon for float precision
+      if (debtAfterPayment <= 0.001) {
+        // Debt is cleared, delete all history for this client
+        clientHistoricoSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+      } else {
+        // Debt is not cleared, add the payment to the history
+        batch.set(doc(historicoRef), {
+          tipo: 'pagamento',
+          valor: amount,
+          data: firestoreDate,
+        });
+      }
+    }
   }
 
   await batch.commit();
