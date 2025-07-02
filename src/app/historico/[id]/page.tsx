@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Edit, PlusCircle, MinusCircle, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Edit, Plus, MinusCircle, Loader2, X, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Transaction, Cliente } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { getHistorico, updateClienteName } from '@/lib/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import AddTransactionSheet from '@/components/add-transaction-sheet';
 
 export default function HistoricoPage() {
   const params = useParams();
@@ -131,7 +132,7 @@ export default function HistoricoPage() {
         </Button>
       </header>
       
-      <div className="flex-1 p-4 md:p-6 space-y-4">
+      <div className="flex-1 p-4 md:p-6 space-y-4 pb-24">
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Saldo Devedor</p>
@@ -169,6 +170,14 @@ export default function HistoricoPage() {
             </div>
         )}
       </div>
+
+      <AddTransactionSheet clienteId={cliente.id} clienteName={cliente.name}>
+        <Button className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40">
+          <Plus className="h-6 w-6" />
+          <span className="sr-only">Adicionar Lançamento</span>
+        </Button>
+      </AddTransactionSheet>
+
     </div>
   );
 }

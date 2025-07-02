@@ -13,6 +13,7 @@ export interface Debtor {
   id: string;
   name: string;
   debt: number;
+  lastFiadoDate?: Date;
 }
 
 export interface Cliente {

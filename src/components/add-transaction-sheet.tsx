@@ -42,7 +42,7 @@ type PagamentoSchema = z.infer<typeof pagamentoSchema>;
 
 const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
-function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: UseFormReturn<FiadoSchema> }) {
+function FiadoForm({ setOpen, form, clienteName }: { setOpen: (open: boolean) => void; form: UseFormReturn<FiadoSchema>, clienteName?: string; }) {
   const { toast } = useToast();
   const [clientes, setClientes] = useState<ClienteWithDebt[]>([]);
   const [filteredClientes, setFilteredClientes] = useState<ClienteWithDebt[]>([]);
@@ -99,67 +99,69 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome do cliente</FormLabel>
-              <FormControl>
-                <div className="relative">
-                   <Input
-                    id="fiado-name-input"
-                    placeholder="Nome do cliente"
-                    {...field}
-                    autoComplete="off"
-                    onFocus={(e) => {
-                        setShowSuggestions(true);
-                        const target = e.currentTarget;
-                        setTimeout(() => {
-                            target.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                            });
-                        }, 100);
-                    }}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                  />
-                  {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
-                    <ul className="absolute z-20 w-full bg-card border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
-                       {filteredClientes.map(cliente => (
-                        <li
-                          key={cliente.id}
-                          className="p-2 hover:bg-accent cursor-pointer text-sm"
-                          onMouseDown={() => handleSelectCliente(cliente)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span>{cliente.name}</span>
-                            {cliente.debt > 0 && (
-                              <span className="text-destructive font-medium">
-                                {formatCurrency(cliente.debt)}
-                              </span>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                      {isNewCliente && (
-                        <li className="p-2 hover:bg-accent cursor-pointer text-sm"
-                            onMouseDown={() => {
-                                form.setValue('name', field.value);
-                                setShowSuggestions(false);
-                            }}
-                        >
-                            Criar novo cliente: "{field.value}"
-                        </li>
-                      )}
-                    </ul>
-                  )}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!clienteName && (
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nome do cliente</FormLabel>
+                <FormControl>
+                    <div className="relative">
+                    <Input
+                        id="fiado-name-input"
+                        placeholder="Nome do cliente"
+                        {...field}
+                        autoComplete="off"
+                        onFocus={(e) => {
+                            setShowSuggestions(true);
+                            const target = e.currentTarget;
+                            setTimeout(() => {
+                                target.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                });
+                            }, 100);
+                        }}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    />
+                    {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
+                        <ul className="absolute z-20 w-full bg-card border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                        {filteredClientes.map(cliente => (
+                            <li
+                            key={cliente.id}
+                            className="p-2 hover:bg-accent cursor-pointer text-sm"
+                            onMouseDown={() => handleSelectCliente(cliente)}
+                            >
+                            <div className="flex justify-between items-center">
+                                <span>{cliente.name}</span>
+                                {cliente.debt > 0 && (
+                                <span className="text-destructive font-medium">
+                                    {formatCurrency(cliente.debt)}
+                                </span>
+                                )}
+                            </div>
+                            </li>
+                        ))}
+                        {isNewCliente && (
+                            <li className="p-2 hover:bg-accent cursor-pointer text-sm"
+                                onMouseDown={() => {
+                                    form.setValue('name', field.value);
+                                    setShowSuggestions(false);
+                                }}
+                            >
+                                Criar novo cliente: "{field.value}"
+                            </li>
+                        )}
+                        </ul>
+                    )}
+                    </div>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        )}
         <FormField
           control={form.control}
           name="amount"
@@ -197,7 +199,7 @@ function FiadoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: 
   );
 }
 
-function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; form: UseFormReturn<PagamentoSchema> }) {
+function PagamentoForm({ setOpen, form, clienteName }: { setOpen: (open: boolean) => void; form: UseFormReturn<PagamentoSchema>, clienteName?: string; }) {
     const { toast } = useToast();
     const [clientes, setClientes] = useState<ClienteWithDebt[]>([]);
     const [filteredClientes, setFilteredClientes] = useState<ClienteWithDebt[]>([]);
@@ -254,67 +256,69 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do cliente (opcional)</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                        id="pagamento-name-input"
-                        placeholder="Nome do cliente"
-                        {...field}
-                        autoComplete="off"
-                        onFocus={(e) => {
-                            setShowSuggestions(true);
-                            const target = e.currentTarget;
-                            setTimeout(() => {
-                                target.scrollIntoView({
-                                    behavior: 'smooth',
-                                    block: 'center',
-                                });
-                            }, 100);
-                        }}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                    />
-                    {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
-                        <ul className="absolute z-20 w-full bg-card border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
-                        {filteredClientes.map(cliente => (
-                            <li
-                                key={cliente.id}
-                                className="p-2 hover:bg-accent cursor-pointer text-sm"
-                                onMouseDown={() => handleSelectCliente(cliente)}
+          {!clienteName && (
+            <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Nome do cliente (opcional)</FormLabel>
+                    <FormControl>
+                    <div className="relative">
+                        <Input
+                            id="pagamento-name-input"
+                            placeholder="Nome do cliente"
+                            {...field}
+                            autoComplete="off"
+                            onFocus={(e) => {
+                                setShowSuggestions(true);
+                                const target = e.currentTarget;
+                                setTimeout(() => {
+                                    target.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'center',
+                                    });
+                                }, 100);
+                            }}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                        />
+                        {showSuggestions && (filteredClientes.length > 0 || isNewCliente) && (
+                            <ul className="absolute z-20 w-full bg-card border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                            {filteredClientes.map(cliente => (
+                                <li
+                                    key={cliente.id}
+                                    className="p-2 hover:bg-accent cursor-pointer text-sm"
+                                    onMouseDown={() => handleSelectCliente(cliente)}
+                                >
+                                <div className="flex justify-between items-center">
+                                    <span>{cliente.name}</span>
+                                    {cliente.debt > 0 && (
+                                    <span className="text-destructive font-medium">
+                                        {formatCurrency(cliente.debt)}
+                                    </span>
+                                    )}
+                                </div>
+                                </li>
+                            ))}
+                            {isNewCliente && (
+                            <li className="p-2 hover:bg-accent cursor-pointer text-sm"
+                                onMouseDown={() => {
+                                    form.setValue('name', field.value);
+                                    setShowSuggestions(false);
+                                }}
                             >
-                              <div className="flex justify-between items-center">
-                                <span>{cliente.name}</span>
-                                {cliente.debt > 0 && (
-                                  <span className="text-destructive font-medium">
-                                    {formatCurrency(cliente.debt)}
-                                  </span>
-                                )}
-                              </div>
+                                Criar novo cliente: "{field.value}"
                             </li>
-                        ))}
-                        {isNewCliente && (
-                          <li className="p-2 hover:bg-accent cursor-pointer text-sm"
-                              onMouseDown={() => {
-                                  form.setValue('name', field.value);
-                                  setShowSuggestions(false);
-                              }}
-                          >
-                              Criar novo cliente: "{field.value}"
-                          </li>
+                            )}
+                            </ul>
                         )}
-                        </ul>
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                    </div>
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+          )}
           <FormField
             control={form.control}
             name="amount"
@@ -352,9 +356,19 @@ function PagamentoForm({ setOpen, form }: { setOpen: (open: boolean) => void; fo
     );
   }
 
-export default function AddTransactionSheet({ children }: { children: React.ReactNode }) {
+export default function AddTransactionSheet({
+  children,
+  defaultTab = 'fiado',
+  clienteId,
+  clienteName,
+}: {
+  children: React.ReactNode;
+  defaultTab?: 'fiado' | 'pagamento';
+  clienteId?: string;
+  clienteName?: string;
+}) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('fiado');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   
   const defaultValues = {
     name: '',
@@ -373,14 +387,30 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
   });
 
   useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
+
+  useEffect(() => {
     if (open) {
+        if (clienteName) {
+            fiadoForm.setValue('name', clienteName);
+            pagamentoForm.setValue('name', clienteName);
+        }
       setTimeout(() => {
         const inputId = activeTab === 'fiado' ? 'fiado-name-input' : 'pagamento-name-input';
         const inputElement = document.getElementById(inputId);
-        inputElement?.focus();
+        if (inputElement) {
+            inputElement.focus();
+        } else {
+            // if name is hidden, focus amount
+            const amountInput = document.querySelector('input[type="number"]') as HTMLInputElement;
+            amountInput?.focus();
+        }
       }, 150);
     }
-  }, [open, activeTab]);
+  }, [open, activeTab, clienteName, fiadoForm, pagamentoForm]);
 
   const handleTabChange = (newTab: string) => {
     if (newTab === 'pagamento') {
@@ -401,9 +431,9 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
     if (!open) {
       fiadoForm.reset(defaultValues);
       pagamentoForm.reset(defaultValues);
-      setActiveTab('fiado');
+      setActiveTab(defaultTab);
     }
-  }, [open, fiadoForm, pagamentoForm]);
+  }, [open, fiadoForm, pagamentoForm, defaultTab]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -418,10 +448,10 @@ export default function AddTransactionSheet({ children }: { children: React.Reac
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
           </TabsList>
           <TabsContent value="fiado">
-            <FiadoForm setOpen={setOpen} form={fiadoForm} />
+            <FiadoForm setOpen={setOpen} form={fiadoForm} clienteName={clienteName} />
           </TabsContent>
           <TabsContent value="pagamento">
-            <PagamentoForm setOpen={setOpen} form={pagamentoForm} />
+            <PagamentoForm setOpen={setOpen} form={pagamentoForm} clienteName={clienteName} />
           </TabsContent>
         </Tabs>
       </SheetContent>

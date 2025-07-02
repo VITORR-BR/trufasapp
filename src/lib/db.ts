@@ -235,24 +235,29 @@ export async function getAllTransactions(): Promise<Transaction[]> {
 }
 
 export async function getDebtors(): Promise<Debtor[]> {
-  const userDebts = new Map<string, number>();
+  const userDetails = new Map<string, { debt: number, lastFiadoDate: Timestamp | null }>();
 
   const historicoQuery = query(collectionGroup(db, 'historico'));
   const historicoSnapshot = await getDocs(historicoQuery);
-  
+
   historicoSnapshot.docs.forEach(doc => {
-      const transaction = doc.data();
+      const transaction = doc.data() as { tipo: string; valor: number; data: Timestamp };
       const userId = doc.ref.parent.parent!.id;
-      const currentDebt = userDebts.get(userId) || 0;
+      const details = userDetails.get(userId) || { debt: 0, lastFiadoDate: null };
+
       if (transaction.tipo === 'fiado') {
-          userDebts.set(userId, currentDebt + transaction.valor);
+          details.debt += transaction.valor;
+          if (!details.lastFiadoDate || transaction.data.toMillis() > details.lastFiadoDate.toMillis()) {
+              details.lastFiadoDate = transaction.data;
+          }
       } else {
-          userDebts.set(userId, currentDebt - transaction.valor);
+          details.debt -= transaction.valor;
       }
+      userDetails.set(userId, details);
   });
 
   const debtorsData: Debtor[] = [];
-  const userIdsWithDebt = Array.from(userDebts.keys()).filter(id => userDebts.get(id)! > 0.001);
+  const userIdsWithDebt = Array.from(userDetails.keys()).filter(id => userDetails.get(id)!.debt > 0.001);
 
   if (userIdsWithDebt.length === 0) return [];
   
@@ -268,10 +273,12 @@ export async function getDebtors(): Promise<Debtor[]> {
       const usersSnapshot = await getDocs(usersQuery);
 
       usersSnapshot.forEach(doc => {
+          const details = userDetails.get(doc.id)!;
           debtorsData.push({
               id: doc.id,
               name: doc.data().nome,
-              debt: userDebts.get(doc.id)!,
+              debt: details.debt,
+              lastFiadoDate: details.lastFiadoDate ? details.lastFiadoDate.toDate() : undefined,
           });
       });
   }

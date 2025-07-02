@@ -11,11 +11,13 @@ import type { Debtor } from '@/lib/types';
 import { getDebtors } from '@/lib/db';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { differenceInDays } from 'date-fns';
 
 export default function PendentesPage() {
   const [debtors, setDebtors] = useState<Debtor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortOrder, setSortOrder] = useState<'debt' | 'name'>('name');
+  const [sortOrder, setSortOrder] = useState<'name' | 'debt'>('name');
 
   useEffect(() => {
     const fetchDebtors = async () => {
@@ -84,21 +86,36 @@ export default function PendentesPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {sortedDebtors.map(debtor => (
-            <Link href={`/historico/${debtor.id}`} key={debtor.id}>
-              <Card className="hover:bg-accent transition-colors">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarFallback>{debtor.name.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <p className="font-medium">{debtor.name}</p>
-                  </div>
-                  <p className="font-semibold text-destructive">{formatCurrency(debtor.debt)}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {sortedDebtors.map(debtor => {
+            const today = new Date();
+            const isOverdue = debtor.lastFiadoDate && differenceInDays(today, debtor.lastFiadoDate) >= 7;
+
+            return (
+              <Link href={`/historico/${debtor.id}`} key={debtor.id}>
+                <Card className="hover:bg-accent transition-colors">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Avatar>
+                        <AvatarFallback>{debtor.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{debtor.name}</p>
+                          {isOverdue && <Badge variant="destructive" className="px-1.5 py-0.5 text-xs font-semibold">+7 dias</Badge>}
+                        </div>
+                        {debtor.lastFiadoDate && (
+                          <p className="text-sm text-muted-foreground">
+                            Último fiado: {debtor.lastFiadoDate.toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="font-semibold text-destructive">{formatCurrency(debtor.debt)}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
       )}
       
