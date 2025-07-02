@@ -146,7 +146,7 @@ export default function RelatorioPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Relatório</h1>
         <Button variant="outline" onClick={handleExport} disabled={loading || filteredTransactions.length === 0}>
