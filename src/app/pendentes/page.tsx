@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export default function PendentesPage() {
   const [debtors, setDebtors] = useState<Debtor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortOrder, setSortOrder] = useState<'debt' | 'name'>('debt');
+  const [sortOrder, setSortOrder] = useState<'debt' | 'name'>('name');
 
   useEffect(() => {
     const fetchDebtors = async () => {
